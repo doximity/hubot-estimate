@@ -1,0 +1,21 @@
+language: node_js
+node_js:
+  - "8"
+  - "6"
+  - "4"
+notifications:
+  email: false
+sudo: false
+addons:
+  apt:
+    packages:
+    - expect
+before_script:
+  - npm prune
+  - bin/e2e-test.sh
+after_success:
+  - npm run coverage
+  - npm run semantic-release
+branches:
+  except:
+    - /^v\d+\.\d+\.\d+$/
