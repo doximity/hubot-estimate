@@ -17,5 +17,23 @@
   },
   "engines": {
     "node": "6.4.0"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kleinjm/hubot-estimate.git"
+  },
+  "keywords": [
+    "hubot",
+    "estimation",
+    "coffeescript"
+  ],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kleinjm/hubot-estimate/issues"
+  },
+  "homepage": "https://github.com/kleinjm/hubot-estimate#readme"
 }
