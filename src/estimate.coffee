@@ -87,11 +87,33 @@ module.exports = (robot) ->
     if ticketVoteCount >= totalVotersCount
       estimateFor({ robot, res, ticketId })
 
-  robot.respond /estimate team (.*)/i, id: 'estimate.team', (res) ->
-    options = res.match[1]?.split(',')
+  robot.respond /estimate team(.*)/i, id: 'estimate.team', (res) ->
+    options = res.match[1]?.split(',')?.filter(String)
     channel = options[0]?.trim()
+
+    if !options?.length || !channel?.length
+      res.send "Please run the command: estimate team <channel>, <pivotal_project_id>, [<team_members>]"
+      return
+
     projectId = options[1]?.trim()
-    members = options.slice(2).join(',').match(/\[(.*)\]/i)[1]?.split(',')
+
+    if !projectId?.length
+      res.send "Please add your team's Pivotal Tracker project id"
+      return
+
+    members = options.slice(2)
+      .join(',')
+      .match(/\[(.*)\]/i)?[1]?.split(',')
+      .filter(String)
+
+    if !members?
+      res.send "Please add team members in the form of [@name, @anothername]"
+      return
+
+    if members?.length == 0
+      res.send "Please add at least one team member"
+      return
+
     res.send "#{channel}, #{projectId}, #{members.length}"
 
   robot.hear /estimate for (.*)/i, id: 'estimate.for', (res) ->

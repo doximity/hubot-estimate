@@ -68,6 +68,36 @@ describe 'estimate', ->
           ['hubot', '#channel1, 123, 2']
         ]
 
+    it 'requires options to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "Please run the command: estimate team <channel>, <pivotal_project_id>, [<team_members>]"]
+        )
+
+    it 'requires a team slack channel to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team ,').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "Please run the command: estimate team <channel>, <pivotal_project_id>, [<team_members>]"]
+        )
+
+    it 'requires a pivotal project id to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team #channel1,').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "Please add your team's Pivotal Tracker project id"]
+        )
+
+    it 'requires team members to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team #channel1, 123,').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', 'Please add team members in the form of [@name, @anothername]']
+        )
+
+    it 'requires at least one team member', ->
+      @room.user.say('malkomalko', 'hubot estimate team #channel1, 123, []').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', 'Please add at least one team member']
+        )
+
   describe 'estimate for <ticket_id>', ->
     it 'returns a no estimation message if no estimates', ->
       @room.user.say('kleinjm', 'estimate for 1').then =>
