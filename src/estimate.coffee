@@ -21,9 +21,9 @@ median = (ticket) ->
   values.sort  (a, b) -> return a - b
   half = Math.floor values.length/2
   if values.length % 2
-    values[half]
+    Math.ceil values[half]
   else
-    (values[half-1] + values[half]) / 2.0
+    Math.ceil((values[half-1] + values[half]) / 2.0)
 
 listVoters = (ticket, withVote = false) ->
   voters = ""

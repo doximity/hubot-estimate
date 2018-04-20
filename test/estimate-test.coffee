@@ -76,27 +76,35 @@ describe 'estimate', ->
     context 'non-unanimous votes', ->
       it 'returns a list of users and median for odd number of users', ->
         @room.user.say('kleinjm', 'hubot estimate 1 as 3')
-        @room.user.say('krish', 'hubot estimate 1 as 5')
-        @room.user.say('rstawarz', 'hubot estimate 1 as 5')
+        @room.user.say('coworker2', 'hubot estimate 1 as 5')
+        @room.user.say('coworker1', 'hubot estimate 1 as 5')
         @room.user.say('kleinjm', 'estimate for 1').then =>
           expect(@room.lastMessage()).to.eql(
-            ['hubot', 'Median vote of 5 by kleinjm: 3, krish: 5, rstawarz: 5']
+            ['hubot', 'Median vote of 5 by kleinjm: 3, coworker2: 5, coworker1: 5']
           )
 
       it 'returns a list of users and median for even number of users', ->
         @room.user.say('kleinjm', 'hubot estimate 1 as 3')
-        @room.user.say('rstawarz', 'hubot estimate 1 as 5')
+        @room.user.say('coworker1', 'hubot estimate 1 as 5')
         @room.user.say('kleinjm', 'estimate for 1').then =>
           expect(@room.lastMessage()).to.eql(
-            ['hubot', 'Median vote of 4 by kleinjm: 3, rstawarz: 5']
+            ['hubot', 'Median vote of 4 by kleinjm: 3, coworker1: 5']
+          )
+
+      it 'rounds a median vote up', ->
+        @room.user.say('kleinjm', 'hubot estimate 1 as 3')
+        @room.user.say('coworker1', 'hubot estimate 1 as 4')
+        @room.user.say('kleinjm', 'estimate for 1').then =>
+          expect(@room.lastMessage()).to.eql(
+            ['hubot', 'Median vote of 4 by kleinjm: 3, coworker1: 4']
           )
 
     it 'returns a message and list of users if unanimous', ->
       @room.user.say('kleinjm', 'hubot estimate 1 as 3')
-      @room.user.say('rstawarz', 'hubot estimate 1 as 3')
+      @room.user.say('coworker1', 'hubot estimate 1 as 3')
       @room.user.say('kleinjm', 'estimate for 1').then =>
         expect(@room.lastMessage()).to.eql(
-          ['hubot', 'Unanimous estimation of 3 points by kleinjm, rstawarz']
+          ['hubot', 'Unanimous estimation of 3 points by kleinjm, coworker1']
         )
 
   describe 'estimate voters for <ticket_id>', ->
@@ -108,10 +116,10 @@ describe 'estimate', ->
 
     it 'returns a list of users that have voted', ->
       @room.user.say('kleinjm', 'hubot estimate 1 as 3')
-      @room.user.say('rstawarz', 'hubot estimate 1 as 5')
+      @room.user.say('coworker1', 'hubot estimate 1 as 5')
       @room.user.say('kleinjm', 'estimate voters for 1').then =>
         expect(@room.lastMessage()).to.eql(
-          ['hubot', 'People who voted for 1: kleinjm, rstawarz']
+          ['hubot', 'People who voted for 1: kleinjm, coworker1']
         )
 
   describe 'estimate remove <ticket_id>', ->

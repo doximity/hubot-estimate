@@ -1,6 +1,6 @@
 {
   "name": "hubot-estimate",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "author": "kleinjm",
   "description": "Async private voting for estimation meetings",
   "main": "index.coffee",
