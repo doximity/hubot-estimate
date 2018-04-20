@@ -92,7 +92,11 @@ updatePivotalTicket = ({ robot, res, projectId, ticketId, points }) ->
       else
         response = JSON.parse body
         robot.logger.debug response
-        res.send "Updated ticket ##{ticketId} with #{points} point(s)"
+        generalProblem = response.general_problem
+        if generalProblem?
+          res.send "Error updating ticket: #{generalProblem}"
+        else
+          res.send "Updated ticket ##{ticketId} with #{points} point(s)"
 
 module.exports = (robot) ->
   robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
