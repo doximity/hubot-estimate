@@ -4,7 +4,7 @@
 #
 # Commands:
 #   hubot estimate <ticket_id> as <points> - saves estimate
-#   hubot estimate team <channel>, <pivotal_project_id>, [<team_members>]
+#   hubot estimate team <channel>, <pivotal_project_id>, [<team_members>] - saves a team
 #   estimate for <ticket_id> - lists the estimate with user names
 #   estimate voters for <ticket_id> - lists the users names voted
 #   estimate remove <ticket_id> - removes votes for given ticket_id
