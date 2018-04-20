@@ -25,6 +25,13 @@ describe 'estimate', ->
           ['hubot', "You've estimated story 1 as 0 points"]
         ]
 
+    it 'handles extra whitespace around story name', ->
+      @room.user.say('kleinjm', 'hubot estimate     1     as 3').then =>
+        expect(@room.messages).to.eql [
+          ['kleinjm', 'hubot estimate     1     as 3']
+          ['hubot', "You've estimated story 1 as 3 points"]
+        ]
+
     it 'only responds to being directly addressed', ->
       @room.user.say('kleinjm', 'estimate 1 as 1').then =>
         expect(@room.messages).to.eql [

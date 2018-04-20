@@ -39,7 +39,7 @@ noEstimationMessage = (ticketId) ->
 module.exports = (robot) ->
   robot.respond /estimate (.*) as (.*)/i, (res) ->
     # tell the user what they voted for and what the vote is
-    ticketId = res.match[1]
+    ticketId = res.match[1].trim()
     pointsTrimmed = res.match[2].trim()
     points = Number(pointsTrimmed)
 
