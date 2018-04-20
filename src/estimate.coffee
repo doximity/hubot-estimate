@@ -23,6 +23,7 @@ http = require "http"
 HUBOT_PIVOTAL_TOKEN = process.env.HUBOT_PIVOTAL_TOKEN
 NAMESPACE = "hubot-estimate-"
 TOTAL_VOTERS = "-total-voters"
+TRACKER_BASE_URL = "https://www.pivotaltracker.com/services/v5"
 
 median = (ticket) ->
   values = (parseInt(value) for own prop, value of ticket)
@@ -64,10 +65,23 @@ estimateFor = ({ robot, res, ticketId }) ->
 
   # post to pivotal tracker
   if HUBOT_PIVOTAL_TOKEN?
-    updatePivotalTicket({ res, ticketId, points })
+    updatePivotalTicket({ robot, res, ticketId, points })
 
-updatePivotalTicket = ({ res, ticketId, points }) ->
+updatePivotalTicket = ({ robot, res, ticketId, points }) ->
   res.send "Updating ticket ##{ticketId} with #{points} point(s)"
+  data = JSON.stringify { estimate: points }
+  project_id = "1539249"
+  url = "#{TRACKER_BASE_URL}/projects/#{project_id}/stories/#{ticketId}"
+  robot.http(url)
+    .header("Content-Type", "application/json")
+    .header("X-TrackerToken", HUBOT_PIVOTAL_TOKEN)
+    .put(data) (err, _, body) ->
+      if err
+        robot.logger.debug err
+      else
+        response = JSON.parse body
+        robot.logger.debug response
+        res.send "Response from PT: #{body}"
 
 module.exports = (robot) ->
   robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
