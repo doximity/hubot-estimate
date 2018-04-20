@@ -4,6 +4,7 @@
 #
 # Commands:
 #   hubot estimate <ticket_id> as <points> - saves estimate
+#   hubot estimate team <channel>, <pivotal_project_id>, [<team_members>] - saves a team
 #   estimate for <ticket_id> - lists the estimate with user names
 #   estimate voters for <ticket_id> - lists the users names voted
 #   estimate remove <ticket_id> - removes votes for given ticket_id
@@ -44,6 +45,9 @@ listVoters = (ticket, withVote = false) ->
 
 noEstimationMessage = (ticketId) ->
   "There is no estimation for story #{ticketId}"
+
+teamNamespace = (channel, projectId) ->
+  "#{NAMESPACE}#{channel}-#{projectId}"
 
 estimateFor = ({ robot, res, ticketId }) ->
   ticket = robot.brain.get "#{NAMESPACE}#{ticketId}"
@@ -112,6 +116,38 @@ module.exports = (robot) ->
     ticketVoteCount = Object.keys(ticket).length
     if ticketVoteCount >= totalVotersCount
       estimateFor({ robot, res, ticketId })
+
+  robot.respond /estimate team(.*)/i, id: 'estimate.team', (res) ->
+    options = res.match[1]?.split(',')?.filter(String)
+    channel = options[0]?.trim()
+
+    if !options?.length || !channel?.length
+      res.send "Please run the command: estimate team <channel>, <pivotal_project_id>, [<team_members>]"
+      return
+
+    projectId = options[1]?.trim()
+
+    if !projectId?.length
+      res.send "Please add your team's Pivotal Tracker project id"
+      return
+
+    members = options.slice(2)
+      .join(',')
+      .match(/\[(.*)\]/i)?[1]?.split(',')
+      .filter(String)
+
+    if !members
+      res.send "Please add team members in the form of [@name, @anothername]"
+      return
+
+    if members?.length == 0
+      res.send "Please add at least one team member"
+      return
+
+    robot.brain.set teamNamespace(channel, projectId), {
+      channel, projectId, members
+    }
+    res.send "Team created for channel: #{channel}, project id: #{projectId}, and member(s): #{members}"
 
   robot.hear /estimate for (.*)/i, id: 'estimate.for', (res) ->
     # check if the ticket exists and return if not
