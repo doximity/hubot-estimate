@@ -46,8 +46,8 @@ listVoters = (ticket, withVote = false) ->
 noEstimationMessage = (ticketId) ->
   "There is no estimation for story #{ticketId}"
 
-teamNamespace = (channel, projectId) ->
-  "#{NAMESPACE}#{channel}-#{projectId}"
+teamNamespace = (username) ->
+  "#{NAMESPACE}username-#{username}"
 
 estimateFor = ({ robot, res, ticketId }) ->
   ticket = robot.brain.get "#{NAMESPACE}#{ticketId}"
@@ -141,9 +141,11 @@ module.exports = (robot) ->
       res.send "Please add at least one team member"
       return
 
-    robot.brain.set teamNamespace(channel, projectId), {
-      channel, projectId, members
-    }
+    members.forEach (member) ->
+      robot.brain.set teamNamespace(member), {
+        channel, projectId, members
+      }
+
     res.send "Team created for channel: #{channel}, project id: #{projectId}, and member(s): #{members}"
 
   robot.hear /estimate for (.*)/i, id: 'estimate.for', (res) ->
