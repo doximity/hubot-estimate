@@ -18,6 +18,9 @@
 # Author:
 #   kleinjm
 
+http = require "http"
+
+HUBOT_PIVOTAL_TOKEN = process.env.HUBOT_PIVOTAL_TOKEN
 NAMESPACE = "hubot-estimate-"
 TOTAL_VOTERS = "-total-voters"
 
@@ -58,6 +61,13 @@ estimateFor = ({ robot, res, ticketId }) ->
     res.send msg
   else
     res.send "Median vote of #{median(ticket)} by #{listVoters(ticket, true)}"
+
+  # post to pivotal tracker
+  if HUBOT_PIVOTAL_TOKEN?
+    updatePivotalTicket({ res, ticketId, points })
+
+updatePivotalTicket = ({ res, ticketId, points }) ->
+  res.send "Updating ticket ##{ticketId} with #{points} point(s)"
 
 module.exports = (robot) ->
   robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
