@@ -20,17 +20,15 @@ describe 'estimate', ->
 
     it 'outputs verification for 0', ->
       @room.user.say('kleinjm', 'hubot estimate 1 as 0').then =>
-        expect(@room.messages).to.eql [
-          ['kleinjm', 'hubot estimate 1 as 0']
+        expect(@room.lastMessage()).to.eql(
           ['hubot', "You've estimated story 1 as 0 points"]
-        ]
+        )
 
     it 'handles extra whitespace around story name', ->
       @room.user.say('kleinjm', 'hubot estimate     1     as 3').then =>
-        expect(@room.messages).to.eql [
-          ['kleinjm', 'hubot estimate     1     as 3']
+        expect(@room.lastMessage()).to.eql(
           ['hubot', "You've estimated story 1 as 3 points"]
-        ]
+        )
 
     it 'only responds to being directly addressed', ->
       @room.user.say('kleinjm', 'estimate 1 as 1').then =>
@@ -38,33 +36,29 @@ describe 'estimate', ->
           ['kleinjm', 'estimate 1 as 1']
         ]
 
+    it 'does not respond to empty input', ->
+      @room.user.say('kleinjm', 'hubot estimate 1 as ').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "Please enter a positive integer for your vote"]
+        )
+
     it 'does not allow string input', ->
       @room.user.say('kleinjm', 'hubot estimate 1 as not an int').then =>
-        expect(@room.messages).to.eql [
-          ['kleinjm', 'hubot estimate 1 as not an int']
+        expect(@room.lastMessage()).to.eql(
           ['hubot', "Please enter a positive integer for your vote"]
-        ]
-
-    it 'does not allow empty input', ->
-      @room.user.say('kleinjm', 'hubot estimate 1 as ').then =>
-        expect(@room.messages).to.eql [
-          ['kleinjm', 'hubot estimate 1 as ']
-          ['hubot', "Please enter a positive integer for your vote"]
-        ]
+        )
 
     it 'does not allow negative input', ->
       @room.user.say('kleinjm', 'hubot estimate 1 as -3').then =>
-        expect(@room.messages).to.eql [
-          ['kleinjm', 'hubot estimate 1 as -3']
+        expect(@room.lastMessage()).to.eql(
           ['hubot', "Please enter a positive integer for your vote"]
-        ]
+        )
 
     it 'does not allow decimal input', ->
       @room.user.say('kleinjm', 'hubot estimate 1 as 3.4').then =>
-        expect(@room.messages).to.eql [
-          ['kleinjm', 'hubot estimate 1 as 3.4']
+        expect(@room.lastMessage()).to.eql(
           ['hubot', "Please enter a positive integer for your vote"]
-        ]
+        )
 
   describe 'estimate for <ticket_id>', ->
     it 'returns a no estimation message if no estimates', ->
@@ -80,7 +74,10 @@ describe 'estimate', ->
         @room.user.say('coworker1', 'hubot estimate 1 as 5')
         @room.user.say('kleinjm', 'estimate for 1').then =>
           expect(@room.lastMessage()).to.eql(
-            ['hubot', 'Median vote of 5 by kleinjm: 3, coworker2: 5, coworker1: 5']
+            [
+              'hubot',
+              'Median vote of 5 by kleinjm: 3, coworker2: 5, coworker1: 5'
+            ]
           )
 
       it 'returns a list of users and median for even number of users', ->
@@ -134,3 +131,84 @@ describe 'estimate', ->
           expect(@room.lastMessage()).to.eql(
             ['hubot', 'There is no estimation for story 1']
           )
+
+  describe 'estimate total <voters_count> for <ticket_id>', ->
+    it 'prints the vote when the voters_count is reached', ->
+      @room.user.say('kleinjm', 'estimate total 2 for 123').then(() =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', 'Waiting for 2 votes to print total for 123']
+        )
+        @room.user.say('kleinjm', 'hubot estimate 123 as 2')
+        @room.user.say('coworker1', 'hubot estimate 123 as 2').then(() =>
+          expect(@room.lastMessage()).to.eql(
+            ['hubot', 'Unanimous estimation of 2 points by kleinjm, coworker1']
+          )
+        )
+      )
+
+    it 'warns if a total has already been reached', ->
+      @room.user.say('kleinjm', 'hubot estimate 123 as 2')
+      @room.user.say('coworker1', 'hubot estimate 123 as 2')
+      @room.user.say('kleinjm', 'estimate total 2 for 123').then(() =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', 'Already reached max 2 votes for 123']
+        )
+      )
+
+    it 'handles extra whitespace around voters_count', ->
+      @room.user.say('kleinjm', 'estimate total     2     for 123').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', 'Waiting for 2 votes to print total for 123']
+        )
+
+    it 'does not respond to empty input', ->
+      @room.user.say('kleinjm', 'estimate total for 123').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['kleinjm', 'estimate total for 123']
+        )
+
+    it 'does not allow string input', ->
+      @room.user.say('kleinjm', 'estimate total not an int for 123').then =>
+        expect(@room.lastMessage()).to.eql(
+          [
+            'hubot',
+            "Enter an integer greater than 1 for the total number of voters"
+          ]
+        )
+
+    it 'does not allow negative input', ->
+      @room.user.say('kleinjm', 'estimate total -1 for 123').then =>
+        expect(@room.lastMessage()).to.eql(
+          [
+            'hubot',
+            "Enter an integer greater than 1 for the total number of voters"
+          ]
+        )
+
+    it 'does not allow 0 input', ->
+      @room.user.say('kleinjm', 'estimate total 0 for 123').then =>
+        expect(@room.lastMessage()).to.eql(
+          [
+            'hubot',
+            "Enter an integer greater than 1 for the total number of voters"
+          ]
+        )
+
+    # there is no need to ever have 1 voter
+    it 'does not allow 1 input', ->
+      @room.user.say('kleinjm', 'estimate total 0 for 123').then =>
+        expect(@room.lastMessage()).to.eql(
+          [
+            'hubot',
+            "Enter an integer greater than 1 for the total number of voters"
+          ]
+        )
+
+    it 'does not allow decimal input', ->
+      @room.user.say('kleinjm', 'estimate total 3.4 for 123').then =>
+        expect(@room.lastMessage()).to.eql(
+          [
+            'hubot',
+            "Enter an integer greater than 1 for the total number of voters"
+          ]
+        )
