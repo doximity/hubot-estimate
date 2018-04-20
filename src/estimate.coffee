@@ -86,10 +86,12 @@ updatePivotalTicket = ({ robot, res, projectId, ticketId, points }) ->
   robot.http(url)
     .header("Content-Type", "application/json")
     .header("X-TrackerToken", HUBOT_PIVOTAL_TOKEN)
-    .put(data) (err) ->
+    .put(data) (err, _, body) ->
       if err
         robot.logger.debug err
       else
+        response = JSON.parse body
+        robot.logger.debug response
         res.send "Updated ticket ##{ticketId} with #{points} point(s)"
 
 module.exports = (robot) ->
