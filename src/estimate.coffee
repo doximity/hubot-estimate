@@ -114,7 +114,7 @@ module.exports = (robot) ->
       res.send "Please add at least one team member"
       return
 
-    res.send "#{channel}, #{projectId}, #{members.length}"
+    res.send "Team created for channel: #{channel}, project id: #{projectId}, and member(s): #{members}"
 
   robot.hear /estimate for (.*)/i, id: 'estimate.for', (res) ->
     # check if the ticket exists and return if not
