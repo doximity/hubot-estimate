@@ -96,7 +96,9 @@ updatePivotalTicket = ({ robot, res, projectId, ticketId, points }) ->
         if generalProblem?
           res.send "Error updating ticket: #{generalProblem}"
         else
-          res.send "Updated ticket ##{ticketId} with #{points} point(s)"
+          ticketName = response.name
+          storyUrl = "https://www.pivotaltracker.com/story/show/#{ticketId}"
+          res.send "Updated \"#{ticketName}\" with #{points} point(s)\n#{storyUrl}"
 
 module.exports = (robot) ->
   robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
