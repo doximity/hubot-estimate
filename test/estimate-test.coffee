@@ -60,6 +60,14 @@ describe 'estimate', ->
           ['hubot', "Please enter a positive integer for your vote"]
         )
 
+  describe 'hubot estimate team <channel>, <pivotal_project_id>, [<team_members>]', ->
+    it 'outputs verification for all args', ->
+      @room.user.say('malkomalko', 'hubot estimate team #channel1, 123, [@sally, @jim]').then =>
+        expect(@room.messages).to.eql [
+          ['malkomalko', 'hubot estimate team #channel1, 123, [@sally, @jim]'],
+          ['hubot', '#channel1, 123, 2']
+        ]
+
   describe 'estimate for <ticket_id>', ->
     it 'returns a no estimation message if no estimates', ->
       @room.user.say('kleinjm', 'estimate for 1').then =>

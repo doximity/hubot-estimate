@@ -4,6 +4,7 @@
 #
 # Commands:
 #   hubot estimate <ticket_id> as <points> - saves estimate
+#   hubot estimate team <channel>, <pivotal_project_id>, [<team_members>]
 #   estimate for <ticket_id> - lists the estimate with user names
 #   estimate voters for <ticket_id> - lists the users names voted
 #   estimate remove <ticket_id> - removes votes for given ticket_id
@@ -85,6 +86,13 @@ module.exports = (robot) ->
     ticketVoteCount = Object.keys(ticket).length
     if ticketVoteCount >= totalVotersCount
       estimateFor({ robot, res, ticketId })
+
+  robot.respond /estimate team (.*)/i, id: 'estimate.team', (res) ->
+    options = res.match[1]?.split(',')
+    channel = options[0]?.trim()
+    projectId = options[1]?.trim()
+    members = options.slice(2).join(',').match(/\[(.*)\]/i)[1]?.split(',')
+    res.send "#{channel}, #{projectId}, #{members.length}"
 
   robot.hear /estimate for (.*)/i, id: 'estimate.for', (res) ->
     # check if the ticket exists and return if not
