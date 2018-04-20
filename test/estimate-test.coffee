@@ -62,9 +62,9 @@ describe 'estimate', ->
 
   describe 'hubot estimate team <channel>, <pivotal_project_id>, [<team_members>]', ->
     it 'outputs verification for all args', ->
-      @room.user.say('malkomalko', 'hubot estimate team #channel1, 123, [@sally, @jim]').then =>
+      @room.user.say('malkomalko', 'hubot estimate team #channel1, 123, [@Sally, @jim]').then =>
         expect(@room.messages).to.eql [
-          ['malkomalko', 'hubot estimate team #channel1, 123, [@sally, @jim]'],
+          ['malkomalko', 'hubot estimate team #channel1, 123, [@Sally, @jim]'],
           ['hubot', 'Team created for channel: #channel1, project id: 123, and member(s): sally, jim']
         ]
 

@@ -48,7 +48,7 @@ noEstimationMessage = (ticketId) ->
 
 sanitizedUsername = (member) ->
   return member unless member?
-  member = member.trim()
+  member = member.trim().toLowerCase()
   if member[0] == "@" then member.slice(1) else member
 
 teamNamespace = (username) ->
