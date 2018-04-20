@@ -5,9 +5,10 @@
   "description": "Async private voting for estimation meetings",
   "main": "index.coffee",
   "devDependencies": {
-    "coffee-script": "~1.12",
     "chai": "latest",
-    "hubot-test-helper": "latest",
+    "coffee-script": "~1.12",
+    "hubot-test-helper": "^1.9.0",
+    "lodash": "^4.17.5",
     "mocha": "^5.0.0",
     "pre-commit": "^1.2.2"
   },

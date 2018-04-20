@@ -38,7 +38,7 @@ listVoters = (ticket, withVote = false) ->
 noEstimationMessage = (ticketId) ->
   "There is no estimation for story #{ticketId}"
 
-estimateFor = ({ robot, res, ticketId }) ->
+estimateFor = ({ robot, res, ticketId, room }) ->
   ticket = robot.brain.get "#{NAMESPACE}#{ticketId}"
   if !ticket
     res.send noEstimationMessage(ticketId)
@@ -52,9 +52,10 @@ estimateFor = ({ robot, res, ticketId }) ->
   points = ticket[Object.keys(ticket)[0]]
   if allEqual
     msg = "Unanimous estimation of #{points} points by #{listVoters(ticket)}"
-    res.send msg
   else
-    res.send "Median vote of #{median(ticket)} by #{listVoters(ticket, true)}"
+    msg = "Median vote of #{median(ticket)} by #{listVoters(ticket, true)}"
+
+  if room then robot.messageRoom(room, msg) else res.send msg
 
 module.exports = (robot) ->
   robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
@@ -65,11 +66,11 @@ module.exports = (robot) ->
 
     isInteger = points % 1 == 0
 
-    if pointsTrimmed != "" && isInteger && points >= 0
-      res.send "You've estimated story #{ticketId} as #{points} points"
-    else
+    if pointsTrimmed == "" || !isInteger || points < 0
       res.send "Please enter a positive integer for your vote"
       return
+
+    res.send "You've estimated story #{ticketId} as #{points} points"
 
     # set the key value pair for that ticket for this user
     ticket = robot.brain.get("#{NAMESPACE}#{ticketId}") || {}
@@ -78,13 +79,14 @@ module.exports = (robot) ->
     robot.brain.set "#{NAMESPACE}#{ticketId}", ticket
 
     # check for max voters count
-    totalVotersCount = robot.brain.get("#{NAMESPACE}#{ticketId}#{TOTAL_VOTERS}")
-    return unless totalVotersCount
+    { room, votersCount } =
+      robot.brain.get("#{NAMESPACE}#{ticketId}#{TOTAL_VOTERS}") || {}
+    return unless votersCount && room
 
     # if we've reached max voters, print the estimate
     ticketVoteCount = Object.keys(ticket).length
-    if ticketVoteCount >= totalVotersCount
-      estimateFor({ robot, res, ticketId })
+    if ticketVoteCount >= votersCount
+      estimateFor({ robot, res, ticketId, room })
 
   robot.hear /estimate for (.*)/i, id: 'estimate.for', (res) ->
     # check if the ticket exists and return if not
@@ -110,6 +112,7 @@ module.exports = (robot) ->
   robot.hear /estimate total (.*) for (.*)/i, id: 'estimate.total', (res) ->
     votersCountTrimmed = res.match[1].trim()
     ticketId = res.match[2]
+    room = res.message.room
 
     votersCount = Number(votersCountTrimmed)
     isInteger = votersCount % 1 == 0
@@ -123,5 +126,7 @@ module.exports = (robot) ->
     if ticketVoteCount >= votersCount
       res.send "Already reached max #{votersCount} votes for #{ticketId}"
     else
-      robot.brain.set("#{NAMESPACE}#{ticketId}#{TOTAL_VOTERS}", votersCount)
+      robot.brain.set(
+        "#{NAMESPACE}#{ticketId}#{TOTAL_VOTERS}", { room, votersCount }
+      )
       res.send "Waiting for #{votersCount} votes to print total for #{ticketId}"

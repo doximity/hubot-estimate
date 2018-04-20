@@ -1,11 +1,16 @@
 Helper = require 'hubot-test-helper'
 expect = require('chai').expect
 helper = new Helper('../src/estimate.coffee')
+_ = require('lodash')
 
 describe 'estimate', ->
+  createRoom = (options = {}) ->
+    room = helper.createRoom(options)
+    room.lastMessage = () -> room.messages[room.messages.length - 1]
+    room
+
   beforeEach ->
-    @room = helper.createRoom()
-    @room.lastMessage = () => @room.messages[@room.messages.length - 1]
+    @room = createRoom(name: 'my-room', httpd: false)
 
   afterEach ->
     @room.destroy()
@@ -134,17 +139,15 @@ describe 'estimate', ->
 
   describe 'estimate total <voters_count> for <ticket_id>', ->
     it 'prints the vote when the voters_count is reached', ->
-      @room.user.say('kleinjm', 'estimate total 2 for 123').then(() =>
+      @room.user.say('kleinjm', 'estimate total 2 for 123').then =>
         expect(@room.lastMessage()).to.eql(
           ['hubot', 'Waiting for 2 votes to print total for 123']
         )
         @room.user.say('kleinjm', 'hubot estimate 123 as 2')
-        @room.user.say('coworker1', 'hubot estimate 123 as 2').then(() =>
-          expect(@room.lastMessage()).to.eql(
-            ['hubot', 'Unanimous estimation of 2 points by kleinjm, coworker1']
+        @room.user.say('coworker1', 'hubot estimate 123 as 2').then =>
+          expect(_.flatten(@room.messages)).to.contain(
+            'Unanimous estimation of 2 points by kleinjm, coworker1'
           )
-        )
-      )
 
     it 'warns if a total has already been reached', ->
       @room.user.say('kleinjm', 'hubot estimate 123 as 2')
