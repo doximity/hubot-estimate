@@ -37,7 +37,7 @@ noEstimationMessage = (ticketId) ->
   "There is no estimation for story #{ticketId}"
 
 module.exports = (robot) ->
-  robot.hear /estimate (.*) as (.*)/i, (res) ->
+  robot.respond /estimate (.*) as (.*)/i, (res) ->
     # tell the user what they voted for and what the vote is
     ticketId = res.match[1]
     pointsTrimmed = res.match[2].trim()
