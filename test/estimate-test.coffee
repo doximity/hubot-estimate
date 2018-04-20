@@ -11,11 +11,46 @@ describe 'estimate', ->
     @room.destroy()
 
   describe 'estimate <ticket_id> as <points>', ->
-    it 'outputs verification', ->
+    it 'outputs verification for positive integers', ->
       @room.user.say('kleinjm', 'estimate 1 as 3').then =>
         expect(@room.messages).to.eql [
           ['kleinjm', 'estimate 1 as 3']
           ['hubot', "You've estimated story 1 as 3 points"]
+        ]
+
+    it 'outputs verification for 0', ->
+      @room.user.say('kleinjm', 'estimate 1 as 0').then =>
+        expect(@room.messages).to.eql [
+          ['kleinjm', 'estimate 1 as 0']
+          ['hubot', "You've estimated story 1 as 0 points"]
+        ]
+
+    it 'does not allow string input', ->
+      @room.user.say('kleinjm', 'estimate 1 as not an int').then =>
+        expect(@room.messages).to.eql [
+          ['kleinjm', 'estimate 1 as not an int']
+          ['hubot', "Please enter a positive integer for your vote"]
+        ]
+
+    it 'does not allow empty input', ->
+      @room.user.say('kleinjm', 'estimate 1 as ').then =>
+        expect(@room.messages).to.eql [
+          ['kleinjm', 'estimate 1 as ']
+          ['hubot', "Please enter a positive integer for your vote"]
+        ]
+
+    it 'does not allow negative input', ->
+      @room.user.say('kleinjm', 'estimate 1 as -3').then =>
+        expect(@room.messages).to.eql [
+          ['kleinjm', 'estimate 1 as -3']
+          ['hubot', "Please enter a positive integer for your vote"]
+        ]
+
+    it 'does not allow decimal input', ->
+      @room.user.say('kleinjm', 'estimate 1 as 3.4').then =>
+        expect(@room.messages).to.eql [
+          ['kleinjm', 'estimate 1 as 3.4']
+          ['hubot', "Please enter a positive integer for your vote"]
         ]
 
   describe 'estimate for <ticket_id>', ->

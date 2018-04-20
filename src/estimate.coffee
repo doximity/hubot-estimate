@@ -40,8 +40,15 @@ module.exports = (robot) ->
   robot.hear /estimate (.*) as (.*)/i, (res) ->
     # tell the user what they voted for and what the vote is
     ticketId = res.match[1]
-    points = res.match[2]
-    res.send "You've estimated story #{ticketId} as #{points} points"
+    pointsTrimmed = res.match[2].trim()
+    points = Number(pointsTrimmed)
+
+    isInteger = points % 1 == 0
+
+    if pointsTrimmed != "" && points >= 0 && isInteger
+      res.send "You've estimated story #{ticketId} as #{points} points"
+    else
+      res.send "Please enter a positive integer for your vote"
 
     # set the key value pair for that ticket for this user
     existingTicket = robot.brain.get("#{NAMESPACE}#{ticketId}") || {}
