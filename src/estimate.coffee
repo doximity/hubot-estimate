@@ -109,7 +109,7 @@ module.exports = (robot) ->
       .match(/\[(.*)\]/i)?[1]?.split(',')
       .filter(String)
 
-    if !members?
+    if !members
       res.send "Please add team members in the form of [@name, @anothername]"
       return
 
