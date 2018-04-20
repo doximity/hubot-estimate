@@ -10,14 +10,21 @@
 #   estimate remove <ticket_id> - removes votes for given ticket_id
 #   estimate total <voters_count> for <ticket_id> - prints the votes when the voters_count number of voters has estimated
 #
+# Configuration:
+#   HUBOT_PIVOTAL_TOKEN
+#
 # Notes:
-#  Estimations follow the naming convention `#{NAMESPACE}123` in redis
+#   Estimations follow the naming convention `#{NAMESPACE}123` in redis
 #
 # Author:
 #   kleinjm
 
+http = require "http"
+
+HUBOT_PIVOTAL_TOKEN = process.env.HUBOT_PIVOTAL_TOKEN
 NAMESPACE = "hubot-estimate-"
 TOTAL_VOTERS = "-total-voters"
+TRACKER_BASE_URL = "https://www.pivotaltracker.com/services/v5"
 
 median = (ticket) ->
   values = (parseInt(value) for own prop, value of ticket)
@@ -39,14 +46,22 @@ listVoters = (ticket, withVote = false) ->
 noEstimationMessage = (ticketId) ->
   "There is no estimation for story #{ticketId}"
 
-teamNamespace = (channel, projectId) ->
-  "#{NAMESPACE}#{channel}-#{projectId}"
+sanitizedUsername = (member) ->
+  return member unless member?
+  member = member.trim().toLowerCase()
+  if member[0] == "@" then member.slice(1) else member
+
+teamNamespace = (username) ->
+  "#{NAMESPACE}username-#{username}"
 
 estimateFor = ({ robot, res, ticketId }) ->
   ticket = robot.brain.get "#{NAMESPACE}#{ticketId}"
   if !ticket
     res.send noEstimationMessage(ticketId)
     return
+
+  user = res.message.user.name.toLowerCase()
+  team = robot.brain.get teamNamespace(user)
 
   # see if votes are unanimous
   values = (parseInt(value) for own prop, value of ticket)
@@ -59,6 +74,29 @@ estimateFor = ({ robot, res, ticketId }) ->
     res.send msg
   else
     res.send "Median vote of #{median(ticket)} by #{listVoters(ticket, true)}"
+
+  # post to pivotal tracker
+  projectId = team?.projectId
+  if HUBOT_PIVOTAL_TOKEN? && projectId?
+    updatePivotalTicket({ robot, res, projectId, ticketId, points: median(ticket) })
+
+updatePivotalTicket = ({ robot, res, projectId, ticketId, points }) ->
+  data = JSON.stringify { estimate: points }
+  url = "#{TRACKER_BASE_URL}/projects/#{projectId}/stories/#{ticketId}"
+  robot.http(url)
+    .header("Content-Type", "application/json")
+    .header("X-TrackerToken", HUBOT_PIVOTAL_TOKEN)
+    .put(data) (err, _, body) ->
+      if err
+        robot.logger.debug err
+      else
+        response = JSON.parse body
+        robot.logger.debug response
+        generalProblem = response.general_problem
+        if generalProblem?
+          res.send "Error updating ticket: #{generalProblem}"
+        else
+          res.send "Updated ticket ##{ticketId} with #{points} point(s)"
 
 module.exports = (robot) ->
   robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
@@ -81,12 +119,18 @@ module.exports = (robot) ->
     ticket[user] = points
     robot.brain.set "#{NAMESPACE}#{ticketId}", ticket
 
+    ticketVoteCount = Object.keys(ticket).length
+
+    # check if a team is set
+    team = robot.brain.get teamNamespace(user)
+    if ticketVoteCount >= team?.members.length
+      return estimateFor({ robot, res, ticketId })
+
     # check for max voters count
     totalVotersCount = robot.brain.get("#{NAMESPACE}#{ticketId}#{TOTAL_VOTERS}")
     return unless totalVotersCount
 
     # if we've reached max voters, print the estimate
-    ticketVoteCount = Object.keys(ticket).length
     if ticketVoteCount >= totalVotersCount
       estimateFor({ robot, res, ticketId })
 
@@ -108,6 +152,7 @@ module.exports = (robot) ->
       .join(',')
       .match(/\[(.*)\]/i)?[1]?.split(',')
       .filter(String)
+      .map(sanitizedUsername)
 
     if !members
       res.send "Please add team members in the form of [@name, @anothername]"
@@ -117,10 +162,13 @@ module.exports = (robot) ->
       res.send "Please add at least one team member"
       return
 
-    robot.brain.set teamNamespace(channel, projectId), {
-      channel, projectId, members
-    }
-    res.send "Team created for channel: #{channel}, project id: #{projectId}, and member(s): #{members}"
+    members.forEach (member) ->
+      robot.brain.set teamNamespace(member), {
+        channel, projectId, members
+      }
+
+    res.send "Team created for channel: #{channel}" +
+      ", project id: #{projectId}, and member(s): #{members.join(', ')}"
 
   robot.hear /estimate for (.*)/i, id: 'estimate.for', (res) ->
     # check if the ticket exists and return if not
