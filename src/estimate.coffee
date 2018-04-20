@@ -9,8 +9,11 @@
 #   estimate remove <ticket_id> - removes votes for given ticket_id
 #   estimate total <voters_count> for <ticket_id> - prints the votes when the voters_count number of voters has estimated
 #
+# Configuration:
+#   HUBOT_PIVOTAL_TOKEN
+#
 # Notes:
-#  Estimations follow the naming convention `#{NAMESPACE}123` in redis
+#   Estimations follow the naming convention `#{NAMESPACE}123` in redis
 #
 # Author:
 #   kleinjm
