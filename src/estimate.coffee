@@ -78,7 +78,7 @@ estimateFor = ({ robot, res, ticketId }) ->
   # post to pivotal tracker
   projectId = team?.projectId
   if HUBOT_PIVOTAL_TOKEN? && projectId?
-    updatePivotalTicket({ robot, res, projectId, ticketId, points })
+    updatePivotalTicket({ robot, res, projectId, ticketId, points: median(ticket) })
 
 updatePivotalTicket = ({ robot, res, projectId, ticketId, points }) ->
   data = JSON.stringify { estimate: points }
