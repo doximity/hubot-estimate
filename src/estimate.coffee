@@ -83,6 +83,7 @@ estimateFor = ({ robot, res, ticketId }) ->
 updatePivotalTicket = ({ robot, res, projectId, ticketId, points }) ->
   data = JSON.stringify { estimate: points }
   url = "#{TRACKER_BASE_URL}/projects/#{projectId}/stories/#{ticketId}"
+  storyUrl = "https://www.pivotaltracker.com/story/show/#{ticketId}"
   robot.http(url)
     .header("Content-Type", "application/json")
     .header("X-TrackerToken", HUBOT_PIVOTAL_TOKEN)
@@ -94,10 +95,9 @@ updatePivotalTicket = ({ robot, res, projectId, ticketId, points }) ->
         robot.logger.debug response
         generalProblem = response.general_problem
         if generalProblem?
-          res.send "Error updating ticket: #{generalProblem}"
+          res.send "Error updating ticket: #{generalProblem}\n#{storyUrl}"
         else
           ticketName = response.name
-          storyUrl = "https://www.pivotaltracker.com/story/show/#{ticketId}"
           res.send "Updated \"#{ticketName}\" with #{points} point(s)\n#{storyUrl}"
 
 module.exports = (robot) ->
