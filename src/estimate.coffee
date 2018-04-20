@@ -60,6 +60,9 @@ estimateFor = ({ robot, res, ticketId }) ->
     res.send noEstimationMessage(ticketId)
     return
 
+  user = res.message.user.name.toLowerCase()
+  team = robot.brain.get teamNamespace(user)
+
   # see if votes are unanimous
   values = (parseInt(value) for own prop, value of ticket)
   allEqual = !!values.reduce((a, b) ->
@@ -73,13 +76,13 @@ estimateFor = ({ robot, res, ticketId }) ->
     res.send "Median vote of #{median(ticket)} by #{listVoters(ticket, true)}"
 
   # post to pivotal tracker
-  if HUBOT_PIVOTAL_TOKEN?
-    updatePivotalTicket({ robot, res, ticketId, points })
+  projectId = team?.projectId
+  if HUBOT_PIVOTAL_TOKEN? && projectId?
+    updatePivotalTicket({ robot, res, projectId, ticketId, points })
 
-updatePivotalTicket = ({ robot, res, ticketId, points }) ->
+updatePivotalTicket = ({ robot, res, projectId, ticketId, points }) ->
   data = JSON.stringify { estimate: points }
-  project_id = 0
-  url = "#{TRACKER_BASE_URL}/projects/#{project_id}/stories/#{ticketId}"
+  url = "#{TRACKER_BASE_URL}/projects/#{projectId}/stories/#{ticketId}"
   robot.http(url)
     .header("Content-Type", "application/json")
     .header("X-TrackerToken", HUBOT_PIVOTAL_TOKEN)
@@ -110,12 +113,18 @@ module.exports = (robot) ->
     ticket[user] = points
     robot.brain.set "#{NAMESPACE}#{ticketId}", ticket
 
+    ticketVoteCount = Object.keys(ticket).length
+
+    # check if a team is set
+    team = robot.brain.get teamNamespace(user)
+    if ticketVoteCount >= team?.members.length
+      return estimateFor({ robot, res, ticketId })
+
     # check for max voters count
     totalVotersCount = robot.brain.get("#{NAMESPACE}#{ticketId}#{TOTAL_VOTERS}")
     return unless totalVotersCount
 
     # if we've reached max voters, print the estimate
-    ticketVoteCount = Object.keys(ticket).length
     if ticketVoteCount >= totalVotersCount
       estimateFor({ robot, res, ticketId })
 
