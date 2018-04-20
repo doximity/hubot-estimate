@@ -46,6 +46,11 @@ listVoters = (ticket, withVote = false) ->
 noEstimationMessage = (ticketId) ->
   "There is no estimation for story #{ticketId}"
 
+sanitizedUsername = (member) ->
+  return member unless member?
+  member = member.trim()
+  if member[0] == "@" then member.slice(1) else member
+
 teamNamespace = (username) ->
   "#{NAMESPACE}username-#{username}"
 
@@ -132,6 +137,7 @@ module.exports = (robot) ->
       .join(',')
       .match(/\[(.*)\]/i)?[1]?.split(',')
       .filter(String)
+      .map(sanitizedUsername)
 
     if !members
       res.send "Please add team members in the form of [@name, @anothername]"
@@ -146,7 +152,8 @@ module.exports = (robot) ->
         channel, projectId, members
       }
 
-    res.send "Team created for channel: #{channel}, project id: #{projectId}, and member(s): #{members}"
+    res.send "Team created for channel: #{channel}" +
+      ", project id: #{projectId}, and member(s): #{members.join(', ')}"
 
   robot.hear /estimate for (.*)/i, id: 'estimate.for', (res) ->
     # check if the ticket exists and return if not
