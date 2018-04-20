@@ -37,7 +37,7 @@ noEstimationMessage = (ticketId) ->
   "There is no estimation for story #{ticketId}"
 
 module.exports = (robot) ->
-  robot.respond /estimate (.*) as (.*)/i, (res) ->
+  robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
     # tell the user what they voted for and what the vote is
     ticketId = res.match[1].trim()
     pointsTrimmed = res.match[2].trim()
@@ -56,7 +56,7 @@ module.exports = (robot) ->
     existingTicket[user] = points
     robot.brain.set "#{NAMESPACE}#{ticketId}", existingTicket
 
-  robot.hear /estimate for (.*)/i, (res) ->
+  robot.hear /estimate for (.*)/i, id: 'estimate.for', (res) ->
     # check if the ticket exists and return if not
     ticketId = res.match[1]
     ticket = robot.brain.get "#{NAMESPACE}#{ticketId}"
@@ -76,7 +76,7 @@ module.exports = (robot) ->
     else
       res.send "Median vote of #{median(ticket)} by #{listVoters(ticket, true)}"
 
-  robot.hear /estimate voters for (.*)/i, (res) ->
+  robot.hear /estimate voters for (.*)/i, id: 'estimate.voters-for', (res) ->
     # check if the ticket exists and return if not
     ticketId = res.match[1]
     ticket = robot.brain.get "#{NAMESPACE}#{ticketId}"
@@ -86,7 +86,7 @@ module.exports = (robot) ->
 
     res.send "People who voted for #{ticketId}: #{listVoters(ticket)}"
 
-  robot.hear /estimate remove (.*)/i, (res) ->
+  robot.hear /estimate remove (.*)/i, id: 'estimate.remove', (res) ->
     # lookup ticket and clear it
     ticketId = res.match[1]
     robot.brain.remove "#{NAMESPACE}#{ticketId}"
