@@ -46,10 +46,10 @@ listVoters = (ticket, withVote = false) ->
 noEstimationMessage = (ticketId) ->
   "There is no estimation for story #{ticketId}"
 
-sanitizedUsername = (member) ->
-  return member unless member?
-  member = member.trim().toLowerCase()
-  if member[0] == "@" then member.slice(1) else member
+sanitizedName = (name, charToRemove) ->
+  return name unless name?
+  name = name.trim().toLowerCase()
+  if name[0] == charToRemove then name.slice(1) else name
 
 teamNamespace = (username) ->
   "#{NAMESPACE}username-#{username}"
@@ -79,9 +79,11 @@ estimateFor = ({ robot, res, ticketId, room }) ->
   # post to pivotal tracker
   projectId = team?.projectId
   if HUBOT_PIVOTAL_TOKEN? && projectId?
-    updatePivotalTicket({ robot, res, projectId, ticketId, points: median(ticket) })
+    updatePivotalTicket({
+      robot, res, projectId, ticketId, points: median(ticket), room
+    })
 
-updatePivotalTicket = ({ robot, res, projectId, ticketId, points }) ->
+updatePivotalTicket = ({ robot, res, projectId, ticketId, points, room }) ->
   data = JSON.stringify { estimate: points }
   url = "#{TRACKER_BASE_URL}/projects/#{projectId}/stories/#{ticketId}"
   storyUrl = "https://www.pivotaltracker.com/story/show/#{ticketId}"
@@ -96,10 +98,12 @@ updatePivotalTicket = ({ robot, res, projectId, ticketId, points }) ->
         robot.logger.debug response
         generalProblem = response.general_problem
         if generalProblem?
-          res.send "Error updating ticket: #{generalProblem}\n#{storyUrl}"
+          msg = "Error updating ticket: #{generalProblem}\n#{storyUrl}"
         else
           ticketName = response.name
-          res.send "Updated \"#{ticketName}\" with #{points} point(s)\n#{storyUrl}"
+          msg = "Updated \"#{ticketName}\" with #{points} point(s)\n#{storyUrl}"
+
+        if room then robot.messageRoom(room, msg) else res.send msg
 
 module.exports = (robot) ->
   robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
@@ -127,7 +131,7 @@ module.exports = (robot) ->
     # check if a team is set
     team = robot.brain.get teamNamespace(user)
     if ticketVoteCount >= team?.members.length
-      return estimateFor({ robot, res, ticketId })
+      return estimateFor({ robot, res, ticketId, room: team?.channel })
 
     # check for max voters count
     { room, votersCount } =
@@ -140,7 +144,7 @@ module.exports = (robot) ->
 
   robot.respond /estimate team(.*)/i, id: 'estimate.team', (res) ->
     options = res.match[1]?.split(',')?.filter(String)
-    channel = options[0]?.trim()
+    channel = sanitizedName(options[0], "#")
 
     if !options?.length || !channel?.length
       res.send "Please run the command: estimate team <channel>, <pivotal_project_id>, [<team_members>]"
@@ -156,7 +160,7 @@ module.exports = (robot) ->
       .join(',')
       .match(/\[(.*)\]/i)?[1]?.split(',')
       .filter(String)
-      .map(sanitizedUsername)
+      .map((name) -> sanitizedName(name, '@'))
 
     if !members
       res.send "Please add team members in the form of [@name, @anothername]"
