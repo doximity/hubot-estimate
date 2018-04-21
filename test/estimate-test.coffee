@@ -70,7 +70,7 @@ describe 'estimate', ->
       @room.user.say('malkomalko', 'hubot estimate team #channel1, 123, [@Sally, @jim]').then =>
         expect(@room.messages).to.eql [
           ['malkomalko', 'hubot estimate team #channel1, 123, [@Sally, @jim]'],
-          ['hubot', 'Team created for channel: #channel1, project id: 123, and member(s): sally, jim']
+          ['hubot', 'Team created for channel: channel1, project id: 123, and member(s): sally, jim']
         ]
 
     it 'requires options to be set', ->
