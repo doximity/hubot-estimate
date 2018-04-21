@@ -54,7 +54,7 @@ Before voting you may also set a max number of voters to auto-print the vote whe
 estimate max 2 for 123 # in a public channel
 botname estimate 123 as 3 # user 1
 botname estimate 123 as 3 # user 2
-> Unanimous estimation fo 3 points by user1, user2 # in the public channel
+> Unanimous estimation of 3 points by user1, user2 # in the public channel
 ```
 
 ### Test
