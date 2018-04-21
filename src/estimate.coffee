@@ -4,19 +4,27 @@
 #
 # Commands:
 #   hubot estimate <ticket_id> as <points> - saves estimate
+#   hubot estimate team <channel>, <pivotal_project_id>, [<team_members>] - saves a team
 #   estimate for <ticket_id> - lists the estimate with user names
 #   estimate voters for <ticket_id> - lists the users names voted
 #   estimate remove <ticket_id> - removes votes for given ticket_id
-#   estimate total <voters_count> for <ticket_id> - prints the votes when the voters_count number of voters has estimated
+#   estimate max <voters_count> for <ticket_id> - prints the votes when the voters_count number of voters has estimated
+#
+# Configuration:
+#   HUBOT_PIVOTAL_TOKEN
 #
 # Notes:
-#  Estimations follow the naming convention `#{NAMESPACE}123` in redis
+#   Estimations follow the naming convention `#{NAMESPACE}123` in redis
 #
 # Author:
 #   kleinjm
 
+http = require "http"
+
+HUBOT_PIVOTAL_TOKEN = process.env.HUBOT_PIVOTAL_TOKEN
 NAMESPACE = "hubot-estimate-"
-TOTAL_VOTERS = "-total-voters"
+TOTAL_VOTERS = "-max-voters"
+TRACKER_BASE_URL = "https://www.pivotaltracker.com/services/v5"
 
 median = (ticket) ->
   values = (parseInt(value) for own prop, value of ticket)
@@ -38,11 +46,22 @@ listVoters = (ticket, withVote = false) ->
 noEstimationMessage = (ticketId) ->
   "There is no estimation for story #{ticketId}"
 
+sanitizedUsername = (member) ->
+  return member unless member?
+  member = member.trim().toLowerCase()
+  if member[0] == "@" then member.slice(1) else member
+
+teamNamespace = (username) ->
+  "#{NAMESPACE}username-#{username}"
+
 estimateFor = ({ robot, res, ticketId, room }) ->
   ticket = robot.brain.get "#{NAMESPACE}#{ticketId}"
   if !ticket
     res.send noEstimationMessage(ticketId)
     return
+
+  user = res.message.user.name.toLowerCase()
+  team = robot.brain.get teamNamespace(user)
 
   # see if votes are unanimous
   values = (parseInt(value) for own prop, value of ticket)
@@ -56,6 +75,31 @@ estimateFor = ({ robot, res, ticketId, room }) ->
     msg = "Median vote of #{median(ticket)} by #{listVoters(ticket, true)}"
 
   if room then robot.messageRoom(room, msg) else res.send msg
+
+  # post to pivotal tracker
+  projectId = team?.projectId
+  if HUBOT_PIVOTAL_TOKEN? && projectId?
+    updatePivotalTicket({ robot, res, projectId, ticketId, points: median(ticket) })
+
+updatePivotalTicket = ({ robot, res, projectId, ticketId, points }) ->
+  data = JSON.stringify { estimate: points }
+  url = "#{TRACKER_BASE_URL}/projects/#{projectId}/stories/#{ticketId}"
+  storyUrl = "https://www.pivotaltracker.com/story/show/#{ticketId}"
+  robot.http(url)
+    .header("Content-Type", "application/json")
+    .header("X-TrackerToken", HUBOT_PIVOTAL_TOKEN)
+    .put(data) (err, _, body) ->
+      if err
+        robot.logger.debug err
+      else
+        response = JSON.parse body
+        robot.logger.debug response
+        generalProblem = response.general_problem
+        if generalProblem?
+          res.send "Error updating ticket: #{generalProblem}\n#{storyUrl}"
+        else
+          ticketName = response.name
+          res.send "Updated \"#{ticketName}\" with #{points} point(s)\n#{storyUrl}"
 
 module.exports = (robot) ->
   robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
@@ -78,15 +122,57 @@ module.exports = (robot) ->
     ticket[user] = points
     robot.brain.set "#{NAMESPACE}#{ticketId}", ticket
 
+    ticketVoteCount = Object.keys(ticket).length
+
+    # check if a team is set
+    team = robot.brain.get teamNamespace(user)
+    if ticketVoteCount >= team?.members.length
+      return estimateFor({ robot, res, ticketId })
+
     # check for max voters count
     { room, votersCount } =
       robot.brain.get("#{NAMESPACE}#{ticketId}#{TOTAL_VOTERS}") || {}
     return unless votersCount && room
 
     # if we've reached max voters, print the estimate
-    ticketVoteCount = Object.keys(ticket).length
     if ticketVoteCount >= votersCount
       estimateFor({ robot, res, ticketId, room })
+
+  robot.respond /estimate team(.*)/i, id: 'estimate.team', (res) ->
+    options = res.match[1]?.split(',')?.filter(String)
+    channel = options[0]?.trim()
+
+    if !options?.length || !channel?.length
+      res.send "Please run the command: estimate team <channel>, <pivotal_project_id>, [<team_members>]"
+      return
+
+    projectId = options[1]?.trim()
+
+    if !projectId?.length
+      res.send "Please add your team's Pivotal Tracker project id"
+      return
+
+    members = options.slice(2)
+      .join(',')
+      .match(/\[(.*)\]/i)?[1]?.split(',')
+      .filter(String)
+      .map(sanitizedUsername)
+
+    if !members
+      res.send "Please add team members in the form of [@name, @anothername]"
+      return
+
+    if members?.length == 0
+      res.send "Please add at least one team member"
+      return
+
+    members.forEach (member) ->
+      robot.brain.set teamNamespace(member), {
+        channel, projectId, members
+      }
+
+    res.send "Team created for channel: #{channel}" +
+      ", project id: #{projectId}, and member(s): #{members.join(', ')}"
 
   robot.hear /estimate for (.*)/i, id: 'estimate.for', (res) ->
     # check if the ticket exists and return if not
@@ -109,7 +195,7 @@ module.exports = (robot) ->
     robot.brain.remove "#{NAMESPACE}#{ticketId}"
     res.send "Removed estimation for #{ticketId}"
 
-  robot.hear /estimate total (.*) for (.*)/i, id: 'estimate.total', (res) ->
+  robot.hear /estimate max (.*) for (.*)/i, id: 'estimate.max', (res) ->
     votersCountTrimmed = res.match[1].trim()
     ticketId = res.match[2]
     room = res.message.room
@@ -118,7 +204,7 @@ module.exports = (robot) ->
     isInteger = votersCount % 1 == 0
 
     if votersCountTrimmed == "" || !isInteger || votersCount < 2
-      res.send "Enter an integer greater than 1 for the total number of voters"
+      res.send "Enter an integer greater than 1 for the max number of voters"
       return
 
     ticket = robot.brain.get("#{NAMESPACE}#{ticketId}") || {}
@@ -129,4 +215,4 @@ module.exports = (robot) ->
       robot.brain.set(
         "#{NAMESPACE}#{ticketId}#{TOTAL_VOTERS}", { room, votersCount }
       )
-      res.send "Waiting for #{votersCount} votes to print total for #{ticketId}"
+      res.send "Waiting for #{votersCount} votes to print max for #{ticketId}"

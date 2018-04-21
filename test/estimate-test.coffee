@@ -65,6 +65,44 @@ describe 'estimate', ->
           ['hubot', "Please enter a positive integer for your vote"]
         )
 
+  describe 'hubot estimate team <channel>, <pivotal_project_id>, [<team_members>]', ->
+    it 'outputs verification for all args', ->
+      @room.user.say('malkomalko', 'hubot estimate team #channel1, 123, [@Sally, @jim]').then =>
+        expect(@room.messages).to.eql [
+          ['malkomalko', 'hubot estimate team #channel1, 123, [@Sally, @jim]'],
+          ['hubot', 'Team created for channel: #channel1, project id: 123, and member(s): sally, jim']
+        ]
+
+    it 'requires options to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "Please run the command: estimate team <channel>, <pivotal_project_id>, [<team_members>]"]
+        )
+
+    it 'requires a team slack channel to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team ,').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "Please run the command: estimate team <channel>, <pivotal_project_id>, [<team_members>]"]
+        )
+
+    it 'requires a pivotal project id to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team #channel1,').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "Please add your team's Pivotal Tracker project id"]
+        )
+
+    it 'requires team members to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team #channel1, 123,').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', 'Please add team members in the form of [@name, @anothername]']
+        )
+
+    it 'requires at least one team member', ->
+      @room.user.say('malkomalko', 'hubot estimate team #channel1, 123, []').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', 'Please add at least one team member']
+        )
+
   describe 'estimate for <ticket_id>', ->
     it 'returns a no estimation message if no estimates', ->
       @room.user.say('kleinjm', 'estimate for 1').then =>
@@ -137,11 +175,11 @@ describe 'estimate', ->
             ['hubot', 'There is no estimation for story 1']
           )
 
-  describe 'estimate total <voters_count> for <ticket_id>', ->
+  describe 'estimate max <voters_count> for <ticket_id>', ->
     it 'prints the vote when the voters_count is reached', ->
-      @room.user.say('kleinjm', 'estimate total 2 for 123').then =>
+      @room.user.say('kleinjm', 'estimate max 2 for 123').then =>
         expect(@room.lastMessage()).to.eql(
-          ['hubot', 'Waiting for 2 votes to print total for 123']
+          ['hubot', 'Waiting for 2 votes to print max for 123']
         )
         @room.user.say('kleinjm', 'hubot estimate 123 as 2')
         @room.user.say('coworker1', 'hubot estimate 123 as 2').then =>
@@ -149,69 +187,69 @@ describe 'estimate', ->
             'Unanimous estimation of 2 points by kleinjm, coworker1'
           )
 
-    it 'warns if a total has already been reached', ->
+    it 'warns if a max has already been reached', ->
       @room.user.say('kleinjm', 'hubot estimate 123 as 2')
       @room.user.say('coworker1', 'hubot estimate 123 as 2')
-      @room.user.say('kleinjm', 'estimate total 2 for 123').then(() =>
+      @room.user.say('kleinjm', 'estimate max 2 for 123').then(() =>
         expect(@room.lastMessage()).to.eql(
           ['hubot', 'Already reached max 2 votes for 123']
         )
       )
 
     it 'handles extra whitespace around voters_count', ->
-      @room.user.say('kleinjm', 'estimate total     2     for 123').then =>
+      @room.user.say('kleinjm', 'estimate max     2     for 123').then =>
         expect(@room.lastMessage()).to.eql(
-          ['hubot', 'Waiting for 2 votes to print total for 123']
+          ['hubot', 'Waiting for 2 votes to print max for 123']
         )
 
     it 'does not respond to empty input', ->
-      @room.user.say('kleinjm', 'estimate total for 123').then =>
+      @room.user.say('kleinjm', 'estimate max for 123').then =>
         expect(@room.lastMessage()).to.eql(
-          ['kleinjm', 'estimate total for 123']
+          ['kleinjm', 'estimate max for 123']
         )
 
     it 'does not allow string input', ->
-      @room.user.say('kleinjm', 'estimate total not an int for 123').then =>
+      @room.user.say('kleinjm', 'estimate max not an int for 123').then =>
         expect(@room.lastMessage()).to.eql(
           [
             'hubot',
-            "Enter an integer greater than 1 for the total number of voters"
+            "Enter an integer greater than 1 for the max number of voters"
           ]
         )
 
     it 'does not allow negative input', ->
-      @room.user.say('kleinjm', 'estimate total -1 for 123').then =>
+      @room.user.say('kleinjm', 'estimate max -1 for 123').then =>
         expect(@room.lastMessage()).to.eql(
           [
             'hubot',
-            "Enter an integer greater than 1 for the total number of voters"
+            "Enter an integer greater than 1 for the max number of voters"
           ]
         )
 
     it 'does not allow 0 input', ->
-      @room.user.say('kleinjm', 'estimate total 0 for 123').then =>
+      @room.user.say('kleinjm', 'estimate max 0 for 123').then =>
         expect(@room.lastMessage()).to.eql(
           [
             'hubot',
-            "Enter an integer greater than 1 for the total number of voters"
+            "Enter an integer greater than 1 for the max number of voters"
           ]
         )
 
     # there is no need to ever have 1 voter
     it 'does not allow 1 input', ->
-      @room.user.say('kleinjm', 'estimate total 0 for 123').then =>
+      @room.user.say('kleinjm', 'estimate max 0 for 123').then =>
         expect(@room.lastMessage()).to.eql(
           [
             'hubot',
-            "Enter an integer greater than 1 for the total number of voters"
+            "Enter an integer greater than 1 for the max number of voters"
           ]
         )
 
     it 'does not allow decimal input', ->
-      @room.user.say('kleinjm', 'estimate total 3.4 for 123').then =>
+      @room.user.say('kleinjm', 'estimate max 3.4 for 123').then =>
         expect(@room.lastMessage()).to.eql(
           [
             'hubot',
-            "Enter an integer greater than 1 for the total number of voters"
+            'Enter an integer greater than 1 for the max number of voters'
           ]
         )
