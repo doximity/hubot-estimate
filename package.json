@@ -22,7 +22,9 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "fresh": "^0.5.2"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kleinjm/hubot-estimate.git"
