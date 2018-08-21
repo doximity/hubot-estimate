@@ -66,7 +66,7 @@ npm test
 ## Contributing
 
 Thanks for your intrest in contributing! Please see our [contributing
-guidelines](https://github.com/kleinjm/hubot-estimate/CONTRIBUTING.md) for
+guidelines](https://github.com/kleinjm/hubot-estimate/blob/master/CONTRIBUTING.md) for
 details and feel free to reach out with any questions.
 
 ## License
