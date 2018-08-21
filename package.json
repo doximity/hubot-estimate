@@ -23,7 +23,9 @@
     "test": "test"
   },
   "dependencies": {
-    "fresh": "^0.5.2"
+    "debug": "^2.6.9",
+    "fresh": "^0.5.2",
+    "mime": "^1.4.1"
   },
   "repository": {
     "type": "git",
