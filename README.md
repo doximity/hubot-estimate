@@ -57,12 +57,18 @@ botname estimate 123 as 3 # user 2
 > Unanimous estimation of 3 points by user1, user2 # in the public channel
 ```
 
-### Test
+## Test
 
 ```bash
 npm test
 ```
 
+## Contributing
+
+Thanks for your intrest in contributing! Please see our [contributing
+guidelines](https://github.com/kleinjm/hubot-estimate/CONTRIBUTING.md) for
+details and feel free to reach out with any questions.
+
 ## License
 
-[MIT](http://vjpr.mit-license.org)
+[Apache License Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
