@@ -18,8 +18,10 @@ Add the following to your `external-scripts.json` file:
 
 You will get the most out of hubot estimate if you register your team. Note that to do so you will need to set HUBOT_PIVOTAL_TOKEN.
 ```
-estimate team #channel-name, pivotal_project_id, [team_members]
+estimate team #channel-name, pivotal_project_id, [@team_member_1, @team_member_2, @team_member_N]
 ```
+(The square brackets are required.)
+
 By doing so, the bot will automatically post the score of the votes when all voters have voted in the specified channel. This reduces the overhead of having to ask the bot what the final score is or set up what the expected total number of voters is. Additionally, if you have a pivotal tracker board, the score will be automatically set and you will be linked to the ticket.
 
 In a team channel discuss the ticket you'd like to estimate, ie. 123.
