@@ -23,6 +23,13 @@ describe 'estimate', ->
           ['hubot', "You've estimated story 1 as 3 points"]
         ]
 
+    it 'strips a leading # from the ticket id, since these often accompany Pivotal IDs', ->
+      @room.user.say('kleinjm', 'hubot estimate #1 as 3').then =>
+        expect(@room.messages).to.eql [
+          ['kleinjm', 'hubot estimate #1 as 3']
+          ['hubot', "You've estimated story 1 as 3 points"]
+        ]
+
     it 'outputs verification for 0', ->
       @room.user.say('kleinjm', 'hubot estimate 1 as 0').then =>
         expect(@room.lastMessage()).to.eql(

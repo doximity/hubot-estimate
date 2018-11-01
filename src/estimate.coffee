@@ -108,7 +108,7 @@ updatePivotalTicket = ({ robot, res, projectId, ticketId, points, room }) ->
 module.exports = (robot) ->
   robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
     # tell the user what they voted for and what the vote is
-    ticketId = res.match[1].trim()
+    ticketId = res.match[1].trim().replace(/^#/, '')
     pointsTrimmed = res.match[2].trim()
     points = Number(pointsTrimmed)
 
