@@ -180,12 +180,12 @@ module.exports = (robot) ->
 
   robot.hear /estimate for (.*)/i, id: 'estimate.for', (res) ->
     # check if the ticket exists and return if not
-    ticketId = res.match[1]
+    ticketId = res.match[1].trim().replace(/^#/, '')
     estimateFor({ robot, res, ticketId })
 
   robot.hear /estimate voters for (.*)/i, id: 'estimate.voters-for', (res) ->
     # check if the ticket exists and return if not
-    ticketId = res.match[1]
+    ticketId = res.match[1].trim().replace(/^#/, '')
     ticket = robot.brain.get "#{NAMESPACE}#{ticketId}"
     if !ticket
       res.send noEstimationMessage(ticketId)
@@ -195,13 +195,13 @@ module.exports = (robot) ->
 
   robot.hear /estimate remove (.*)/i, id: 'estimate.remove', (res) ->
     # lookup ticket and clear it
-    ticketId = res.match[1]
+    ticketId = res.match[1].trim().replace(/^#/, '')
     robot.brain.remove "#{NAMESPACE}#{ticketId}"
     res.send "Removed estimation for #{ticketId}"
 
   robot.hear /estimate max (.*) for (.*)/i, id: 'estimate.max', (res) ->
     votersCountTrimmed = res.match[1].trim()
-    ticketId = res.match[2]
+    ticketId = res.match[2].trim().replace(/^#/, '')
     room = res.message.room
 
     votersCount = Number(votersCountTrimmed)
