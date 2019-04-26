@@ -299,8 +299,7 @@ module.exports = (robot) ->
       as_user: true,
       blocks: blocks()
     }
-    slackRequest(robot, "chat.postMessage").query(args).get() (err, _, body) ->
-      console.log("err: #{err}, body: #{body}")
+    slackRequest(robot, "chat.postMessage").query(args).get() (err, _, body) -> {}
 
   if robot.router.use
     robot.router.use(
@@ -315,8 +314,18 @@ module.exports = (robot) ->
     middleware.splice(0, 0, middleware.splice(middleware.length - 1, 1)[0])
     robot.router._router.stack = middleware
 
-    slackInteractions.action { blockId: "options_dropdown" }, (payload, respond) ->
-      console.log(JSON.stringify(payload))
+    slackInteractions.action { blockId: "options_dropdown" }, (payload, _respond) ->
+      channelId = payload.channel.id
+      userId = payload.user.id
       name = payload.user.name
       selectedOption = payload.actions?[0]?.selected_option?.text?.text
-      console.log("OPTION SELECTED: #{selectedOption} FROM: #{name}")
+      args = {
+        token: robot.adapter.options.token,
+        channel: channelId,
+        as_user: true,
+        user: userId,
+        text: "Thanks for choosing #{selectedOption} #{name}"
+      }
+      slackRequest(robot, "chat.postEphemeral").query(args).get() (err, _, body) -> {}
+      reply = payload.original_message
+      reply
