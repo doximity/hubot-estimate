@@ -13,7 +13,8 @@
     "pre-commit": "^1.2.2"
   },
   "scripts": {
-    "test": "EXPRESS_PORT=8081 mocha test/**/*.coffee --require coffee-script/register",
+    "dtest": "EXPRESS_PORT=8081 mocha test/**/*.coffee --require coffee-script/register",
+    "test": "EXPRESS_PORT=8081 mocha test2/**/*.coffee --require coffee-script/register",
     "bootstrap": "script/bootstrap"
   },
   "engines": {
@@ -25,7 +26,8 @@
   "dependencies": {
     "debug": "^2.6.9",
     "fresh": "^0.5.2",
-    "mime": "^1.4.1"
+    "mime": "^1.4.1",
+    "npm": "^6.9.0"
   },
   "repository": {
     "type": "git",
