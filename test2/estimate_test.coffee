@@ -19,6 +19,35 @@ describe 'estimate', ->
       @room.user.say('malkomalko', 'hubot estimate team #channel1, 123, [@Sally, @jim]').then =>
         expect(@room.messages).to.eql [
           ['malkomalko', 'hubot estimate team #channel1, 123, [@Sally, @jim]'],
-          ['hubot', 'Team created for channel: channel1, project id: 123, and member(s): sally, jim']
+          ['hubot', 'Team created for channel: #channel1, project id: 123, and member(s): sally, jim']
         ]
 
+    it 'requires options to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "I will do no such thing unless you run the correct command: estimate team <channel>, <pivotal_project_id>, [@member, @other_member]"]
+        )
+
+    it 'requires a team slack channel to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team ,').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "I will do no such thing unless you run the correct command: estimate team <channel>, <pivotal_project_id>, [@member, @other_member]"]
+        )
+
+    it 'requires a pivotal project id to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team #channel1,').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "I will do no such thing unless you run the correct command: estimate team <channel>, <pivotal_project_id>, [@member, @other_member]"]
+        )
+
+    it 'requires team members to be set', ->
+      @room.user.say('malkomalko', 'hubot estimate team #channel1, 123,').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "I will do no such thing unless you run the correct command: estimate team <channel>, <pivotal_project_id>, [@member, @other_member]"]
+        )
+
+    it 'requires at least one team member', ->
+      @room.user.say('malkomalko', 'hubot estimate team #channel1, 123, []').then =>
+        expect(@room.lastMessage()).to.eql(
+          ['hubot', "I will do no such thing unless you run the correct command: estimate team <channel>, <pivotal_project_id>, [@member, @other_member]"]
+        )

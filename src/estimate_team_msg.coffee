@@ -6,6 +6,9 @@ module.exports = class EstimateTeamMsg
   constructor: (@plainMessage) ->
     @splitMessage = @plainMessage?.split(',')?.filter(String)
 
+  valid: () ->
+    @channel()? && @projectId()? && (@members()?.length > 0)
+
   channel: () ->
     charRemover(@splitMessage[0], "#") if @splitMessage?
 

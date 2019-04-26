@@ -35,8 +35,8 @@ module.exports = (robot) ->
 
   robot.respond /estimate team(.*)/i, id: 'estimate.team', (res) ->
     parsedMsg = new EstimateTeamMsg(res.match[1])
-    estimateTeam(res, parsedMsg)
-
-
-estimateTeam = (res, msg) ->
+    if !parsedMsg.valid()
+      res.send "I will do no such thing unless you run the correct command: estimate team <channel>, <pivotal_project_id>, [@member, @other_member]"
+      return
+    res.send "Team created for channel: ##{parsedMsg.channel()}, project id: #{parsedMsg.projectId()}, and member(s): #{parsedMsg.members().join(', ')}"
 
