@@ -12,6 +12,9 @@
 #
 # Configuration:
 #   HUBOT_PIVOTAL_TOKEN
+#   SLACK_SIGNING_SECRET
+#   SLACK_ACTIONS_URL
+#   SLACK_OPTIONS_URL
 #
 # Notes:
 #   Estimations follow the naming convention `#{NAMESPACE}123` in redis
@@ -20,11 +23,16 @@
 #   kleinjm
 
 http = require "http"
+{ createMessageAdapter } = require("@slack/interactive-messages")
 
 HUBOT_PIVOTAL_TOKEN = process.env.HUBOT_PIVOTAL_TOKEN
 NAMESPACE = "hubot-estimate-"
+SLACK_BASE_URL = "https://slack.com/api"
 TOTAL_VOTERS = "-max-voters"
 TRACKER_BASE_URL = "https://www.pivotaltracker.com/services/v5"
+
+slackInteractions = createMessageAdapter(process.env.SLACK_SIGNING_SECRET)
+messageMiddleware = slackInteractions.expressMiddleware()
 
 median = (ticket) ->
   values = (parseInt(value) for own prop, value of ticket)
@@ -104,6 +112,69 @@ updatePivotalTicket = ({ robot, res, projectId, ticketId, points, room }) ->
           msg = "Updated \"#{ticketName}\" with #{points} point(s)\n#{storyUrl}"
 
         if room then robot.messageRoom(room, msg) else res.send msg
+
+slackRequest = (robot, apiMethod) ->
+  url = "#{SLACK_BASE_URL}/#{apiMethod}"
+  robot.http(url)
+    .header("Content-Type", "application/json")
+
+blocks = () ->
+  JSON.stringify(
+    [
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "This is a mrkdwn section block :ghost: *this is bold*, and ~this is crossed out~, and <https://google.com|this is a link>"
+        }
+      },
+      {
+        "type": "section",
+        "block_id": "options_dropdown",
+        "text": {
+          "type": "mrkdwn",
+          "text": "This block has an overflow menu."
+        },
+        "accessory": {
+          "type": "overflow",
+          "options": [
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "Option 1",
+                "emoji": true
+              },
+              "value": "value-0"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "Option 2",
+                "emoji": true
+              },
+              "value": "value-1"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "Option 3",
+                "emoji": true
+              },
+              "value": "value-2"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "Option 4",
+                "emoji": true
+              },
+              "value": "value-3"
+            }
+          ]
+        }
+      }
+    ]
+  )
 
 module.exports = (robot) ->
   robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
@@ -220,3 +291,32 @@ module.exports = (robot) ->
         "#{NAMESPACE}#{ticketId}#{TOTAL_VOTERS}", { room, votersCount }
       )
       res.send "Waiting for #{votersCount} votes to print max for #{ticketId}"
+
+  robot.respond /blocks test/i, id: 'blocks.test', (res) ->
+    args = {
+      token: robot.adapter.options.token,
+      channel: res.message.room,
+      as_user: true,
+      blocks: blocks()
+    }
+    slackRequest(robot, "chat.postMessage").query(args).get() (err, _, body) ->
+      console.log("err: #{err}, body: #{body}")
+
+  if robot.router.use
+    robot.router.use(
+      process.env.SLACK_ACTIONS_URL || "/slack/actions", messageMiddleware
+    )
+    robot.router.use(
+      process.env.SLACK_OPTIONS_URL || "/slack/options", messageMiddleware
+    )
+
+    middleware = robot.router._router.stack.slice()
+    middleware.splice(0, 0, middleware.splice(middleware.length - 1, 1)[0])
+    middleware.splice(0, 0, middleware.splice(middleware.length - 1, 1)[0])
+    robot.router._router.stack = middleware
+
+    slackInteractions.action { blockId: "options_dropdown" }, (payload, respond) ->
+      console.log(JSON.stringify(payload))
+      name = payload.user.name
+      selectedOption = payload.actions?[0]?.selected_option?.text?.text
+      console.log("OPTION SELECTED: #{selectedOption} FROM: #{name}")
