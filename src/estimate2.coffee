@@ -33,6 +33,15 @@ TRACKER_BASE_URL = "https://www.pivotaltracker.com/services/v5"
 module.exports = (robot) ->
   brain = new Brain(robot)
 
+  robot.respond /estimate (.*) as (.*)/i, id: 'estimate.estimate', (res) ->
+    parsedMsg = new EstimationMsg(res.match)
+    if !parsedMsg.valid()
+      res.send "To estimate, use `estimate <story_id> as <points>` with positive integers"
+    story = new Story(parsedMsg.storyId())
+    story.addEstimation(user: user, points: parsedMsg.points())
+    res.send "You've estimated story #{story.storyId} as #{parsedMsg.points()}"
+
+
   robot.respond /estimate team(.*)/i, id: 'estimate.team', (res) ->
     parsedMsg = new EstimateTeamMsg(res.match[1])
     if !parsedMsg.valid()
