@@ -72,6 +72,20 @@ describe 'estimate', ->
           ['hubot', "Please enter a positive integer for your vote"]
         )
 
+    context 'ESTIMATE_FIBONACCI_SEQUENCE set', ->
+      it 'does not allow non-fibanacci input', ->
+        process.env.ESTIMATE_FIBONACCI_SEQUENCE = "true"
+        @room = createRoom(name: 'my-room', httpd: false)
+
+        @room.user.say('kleinjm', 'hubot estimate 1 as 4').then =>
+          expect(@room.messages).to.eql [
+            ['kleinjm', 'hubot estimate 1 as 4']
+            ['hubot', '4 is an invalid estimate. Please use the Fibonacci sequence']
+          ]
+
+        process.env.ESTIMATE_FIBONACCI_SEQUENCE = undefined
+        @room.destroy()
+
   describe 'hubot estimate team <channel>, <pivotal_project_id>, [<team_members>]', ->
     it 'outputs verification for all args', ->
       @room.user.say('malkomalko', 'hubot estimate team #channel1, 123, [@Sally, @jim]').then =>
@@ -145,6 +159,28 @@ describe 'estimate', ->
           expect(@room.lastMessage()).to.eql(
             ['hubot', 'Median vote of 4 by kleinjm: 3, coworker1: 4']
           )
+
+    context 'ESTIMATE_FIBONACCI_SEQUENCE set', ->
+      it 'rounds median vote up to nearest fibonacci nubmer', ->
+        process.env.ESTIMATE_FIBONACCI_SEQUENCE = "true"
+        @room = createRoom(name: 'my-room', httpd: false)
+
+        @room.user.say('kleinjm', 'hubot estimate 1 as 3')
+        @room.user.say('coworker1', 'hubot estimate 1 as 5')
+        @room.user.say('kleinjm', 'estimate for 1').then =>
+          expect(@room.lastMessage()).to.eql(
+            ['hubot', 'Median vote of 5 by kleinjm: 3, coworker1: 5']
+          )
+
+        @room.user.say('kleinjm', 'hubot estimate 2 as 3')
+        @room.user.say('coworker1', 'hubot estimate 2 as 8')
+        @room.user.say('kleinjm', 'estimate for 2').then =>
+          expect(@room.lastMessage()).to.eql(
+            ['hubot', 'Median vote of 8 by kleinjm: 3, coworker1: 8']
+          )
+
+        process.env.ESTIMATE_FIBONACCI_SEQUENCE = undefined
+        @room.destroy()
 
     it 'returns a message and list of users if unanimous', ->
       @room.user.say('kleinjm', 'hubot estimate 1 as 3')

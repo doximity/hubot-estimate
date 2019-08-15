@@ -59,6 +59,20 @@ botname estimate 123 as 3 # user 2
 > Unanimous estimation of 3 points by user1, user2 # in the public channel
 ```
 
+### Fibonacci Sequence
+If your team uses the [Fibonacci Sequence](http://www.velocitycounts.com/2013/05/why-do-high-performing-scrum-teams-tend-to-use-story-point-estimation/) in your estimation process, you can set the `ESTIMATE_FIBONACCI_SEQUENCE` environment variable to `true`. This will prevent votes from being outside the sequence and round median votes to the nearest number in the sequence (rounded up).
+
+For example:
+```
+estimate 123 as 4 # user 1
+> 4 is an invalid estimate. Please use the Fibonacci sequence
+
+estimate 123 as 3 # user 1
+estimate 123 as 5 # user 2
+estimate for 123
+> Median vote of 5 by user1: 3, user2: 5 # instead of 4
+```
+
 ## Test
 
 ```bash
