@@ -21,19 +21,33 @@
 
 http = require "http"
 
+ESTIMATE_FIBONACCI_SEQUENCE = process.env.ESTIMATE_FIBONACCI_SEQUENCE == 'true'
 HUBOT_PIVOTAL_TOKEN = process.env.HUBOT_PIVOTAL_TOKEN
 NAMESPACE = "hubot-estimate-"
 TOTAL_VOTERS = "-max-voters"
 TRACKER_BASE_URL = "https://www.pivotaltracker.com/services/v5"
 
+FIBONACCI_SEQUENCE = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55]
+
+closestNumberInFibonacci = (ceilingResult) ->
+  lastNumberInSequence = 0
+  for number in FIBONACCI_SEQUENCE
+    return number if ceilingResult < number && ceilingResult > lastNumberInSequence
+    lastNumberInSequence = number
+
 median = (ticket) ->
   values = (parseInt(value) for own prop, value of ticket)
   values.sort  (a, b) -> return a - b
   half = Math.floor values.length/2
-  if values.length % 2
-    Math.ceil values[half]
-  else
-    Math.ceil((values[half-1] + values[half]) / 2.0)
+  ceilingResult =
+    if values.length % 2
+      Math.ceil values[half]
+    else
+      Math.ceil((values[half-1] + values[half]) / 2.0)
+
+  return ceilingResult unless ESTIMATE_FIBONACCI_SEQUENCE
+  return ceilingResult if ceilingResult in ESTIMATE_FIBONACCI_SEQUENCE
+  closestNumberInFibonacci(ceilingResult)
 
 listVoters = (ticket, withVote = false) ->
   voters = ""
@@ -116,6 +130,10 @@ module.exports = (robot) ->
 
     if pointsTrimmed == "" || !isInteger || points < 0
       res.send "Please enter a positive integer for your vote"
+      return
+
+    if ESTIMATE_FIBONACCI_SEQUENCE && points not in FIBONACCI_SEQUENCE
+      res.send "#{pointsTrimmed} is an invalid estimate. Please use the Fibonacci sequence"
       return
 
     res.send "You've estimated story #{ticketId} as #{points} points"
