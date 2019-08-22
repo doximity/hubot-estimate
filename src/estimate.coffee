@@ -46,7 +46,7 @@ median = (ticket) ->
       Math.ceil((values[half-1] + values[half]) / 2.0)
 
   return ceilingResult unless ESTIMATE_FIBONACCI_SEQUENCE
-  return ceilingResult if ceilingResult in ESTIMATE_FIBONACCI_SEQUENCE
+  return ceilingResult if ceilingResult in FIBONACCI_SEQUENCE
   closestNumberInFibonacci(ceilingResult)
 
 listVoters = (ticket, withVote = false) ->
