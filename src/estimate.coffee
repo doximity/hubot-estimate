@@ -88,16 +88,18 @@ estimateFor = ({ robot, res, ticketId, room }) ->
   else
     msg = "Median vote of #{median(ticket)} by #{listVoters(ticket, true)}"
 
-  if room then robot.messageRoom(room, msg) else res.send msg
-
   # post to pivotal tracker
   projectId = team?.projectId
   if HUBOT_PIVOTAL_TOKEN? && projectId?
+    messagePrefix = msg
     updatePivotalTicket({
-      robot, res, projectId, ticketId, points: median(ticket), room
+      robot, res, projectId, ticketId, points: median(ticket), room, messagePrefix
     })
+  else
+    if room then robot.messageRoom(room, msg) else res.send msg
 
-updatePivotalTicket = ({ robot, res, projectId, ticketId, points, room }) ->
+
+updatePivotalTicket = ({ robot, res, projectId, ticketId, points, room, messagePrefix }) ->
   data = JSON.stringify { estimate: points }
   url = "#{TRACKER_BASE_URL}/projects/#{projectId}/stories/#{ticketId}"
   storyUrl = "https://www.pivotaltracker.com/story/show/#{ticketId}"
@@ -117,6 +119,7 @@ updatePivotalTicket = ({ robot, res, projectId, ticketId, points, room }) ->
           ticketName = response.name
           msg = "Updated \"#{ticketName}\" with #{points} point(s)\n#{storyUrl}"
 
+        msg = "#{messagePrefix}\n\n#{msg}" if messagePrefix?.length
         if room then robot.messageRoom(room, msg) else res.send msg
 
 module.exports = (robot) ->
